@@ -1,0 +1,28 @@
+:root {
+  color: #e9f0ff;
+  background: #090e1b;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; min-width: 1080px; min-height: 100vh; }
+.shell { min-height: 100vh; }
+.sidebar { position: relative; background: #080d18 !important; border-right: 1px solid rgba(255, 255, 255, 0.07); }
+.brand { height: 88px; display: flex; align-items: center; gap: 12px; padding: 0 19px; overflow: hidden; font-weight: 800; letter-spacing: 0.16em; white-space: nowrap; }
+.brand-collapsed { gap: 0; padding: 0 19px; }
+.brand-mark { display: grid; flex: 0 0 34px; place-items: center; width: 34px; height: 34px; border-radius: 10px; color: #07130e; background: #53dfac; font-size: 25px; }
+.brand-name { opacity: 1; transition: opacity 160ms ease; }
+.brand-collapsed .brand-name { width: 0; opacity: 0; }
+.sidebar-toggle { position: absolute; z-index: 10; top: 29px; right: -14px; width: 28px !important; min-width: 28px !important; height: 28px !important; padding: 0 !important; border: 1px solid rgba(255, 255, 255, 0.14); border-radius: 50% !important; color: #aebbd0 !important; background: #11192b !important; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3); }
+.sidebar-toggle:hover { color: #53dfac !important; border-color: rgba(83, 223, 172, 0.55) !important; background: #172238 !important; }
+.topbar { height: 88px; padding: 16px 28px; background: rgba(9, 14, 27, 0.86); border-bottom: 1px solid rgba(255, 255, 255, 0.07); }
+.topbar h3 { margin: 1px 0 0 !important; }
+.eyebrow { color: #53dfac !important; font-size: 10px; font-weight: 700; letter-spacing: 0.18em; }
+.content { padding: 24px 28px 40px; background: radial-gradient(circle at 88% 5%, rgba(55, 129, 132, 0.13), transparent 30%), #090e1b; }
+.overview-row { margin-top: 16px; }
+.worker-chart { height: 260px; }
+.error { margin-bottom: 18px; }
+.column-help { color: rgba(233, 240, 255, 0.48); font-size: 13px; }
+.ant-card { border-color: rgba(255, 255, 255, 0.08); box-shadow: 0 12px 28px rgba(0, 0, 0, 0.16); }
+.ant-table-wrapper { overflow: hidden; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.08); }
