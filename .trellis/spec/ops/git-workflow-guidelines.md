@@ -61,7 +61,7 @@ git diff --cached --name-only
 
 仓库可能同时存在用户手工改动、其他终端任务和 Trellis 运行态文件。任何自动化或 AI 会话都必须保留不属于当前任务的变更。
 
-根 `.gitignore` 已排除 `.env` 与 `.env.*`（保留 `.env.example`）、`data/`、cache、虚拟环境、`node_modules/` 和 build output；`.trellis/.gitignore` 已排除 developer identity、session runtime、current-task pointer、agent runtime、临时文件与 cache。不要使用 `git add -f` 绕过这些边界，除非用户明确要求提交某个已审查文件。
+根 `.gitignore` 已排除 `.env` 与 `.env.*`（只保留应用和两套 Compose 的 `.example` 模板）、`data/`、cache、虚拟环境、`node_modules/` 和 build output；`.trellis/.gitignore` 已排除 developer identity、session runtime、current-task pointer、agent runtime、临时文件与 cache。不要使用 `git add -f` 绕过这些边界，除非用户明确要求提交某个已审查文件。
 
 遇到 dirty worktree 时：
 

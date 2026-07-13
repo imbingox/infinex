@@ -1,11 +1,10 @@
 x-infinex-service: &infinex-service
-  image: ghcr.io/imbingox/infinex:latest
+  image: ${INFINEX_IMAGE:-ghcr.io/imbingox/infinex:latest}
   build:
     context: .
   restart: unless-stopped
 
-x-infinex-environment: &infinex-environment
-  ARTIFACT_DIR: /app/data/artifacts
+x-worker-environment: &worker-environment
   WORKER_DATA_DIR: /app/data/workers
   WORKER_ENROLLMENT_TOKEN: ${WORKER_ENROLLMENT_TOKEN:-change-me-before-production}
 
@@ -13,7 +12,8 @@ services:
   infinex:
     <<: *infinex-service
     environment:
-      <<: *infinex-environment
+      <<: *worker-environment
+      ARTIFACT_DIR: /app/data/artifacts
       DATABASE_URL: ${DATABASE_URL:-sqlite:////app/data/infinex.db}
     ports:
       - "8002:8002"
@@ -30,17 +30,20 @@ services:
       retries: 3
       start_period: 30s
     volumes:
-      - infinex-data:/app/data
+      - type: bind
+        source: ${INFINEX_DATA_ROOT:-./data}/control-plane
+        target: /app/data
+        bind:
+          create_host_path: false
 
   backtest-worker:
     <<: *infinex-service
-    profiles: ["workers"]
     command:
       [
         "infinex",
         "backtest-worker",
         "--worker-id",
-        "backtest-compose",
+        "${BACKTEST_WORKER_ID:-backtest-compose}",
         "--control-plane-url",
         "http://infinex:8002",
       ]
@@ -48,30 +51,10 @@ services:
       infinex:
         condition: service_healthy
     environment:
-      <<: *infinex-environment
+      <<: *worker-environment
     volumes:
-      - worker-data:/app/data/workers
-
-  live-agent:
-    <<: *infinex-service
-    profiles: ["workers"]
-    command:
-      [
-        "infinex",
-        "live-agent",
-        "--worker-id",
-        "live-compose",
-        "--control-plane-url",
-        "http://infinex:8002",
-      ]
-    depends_on:
-      infinex:
-        condition: service_healthy
-    environment:
-      <<: *infinex-environment
-    volumes:
-      - worker-data:/app/data/workers
-
-volumes:
-  infinex-data:
-  worker-data:
+      - type: bind
+        source: ${INFINEX_DATA_ROOT:-./data}/backtest-worker
+        target: /app/data/workers
+        bind:
+          create_host_path: false
