@@ -96,7 +96,7 @@ export const apiBaseUrl =
 
 - 未设置 `VITE_API_BASE_URL` 时，`apiBaseUrl` 为空字符串，`fetch("/api/...")` 使用浏览器当前 origin；Socket.IO 使用 `window.location.origin`。
 - 设置 `VITE_API_BASE_URL` 时，HTTP 和 Socket.IO 都连接该 origin；末尾一个 `/` 会被移除，调用路径仍应以 `/api` 开头。
-- Vite 开发服务器监听 `5173`，并把 `/api` 与 `/socket.io` 代理到 `http://127.0.0.1:8000`；Socket.IO 代理启用 `ws: true`。
+- Vite 开发服务器监听 `5173`，并把 `/api` 与 `/socket.io` 代理到 `http://127.0.0.1:8002`；Socket.IO 代理启用 `ws: true`。该端口必须与 `infinex serve` 默认值保持一致。
 
 常规 JSON 请求必须复用 `apiRequest<T>()`：
 

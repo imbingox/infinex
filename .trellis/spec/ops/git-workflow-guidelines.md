@@ -4,14 +4,15 @@
 
 ## 当前历史风格
 
-当前可见历史只有两个提交：
+当前历史使用 Conventional Commit summary，例如：
 
 ```text
-bea0eef fix: stabilize CI and database bootstrap
-0a499dc feat: implement stage one control plane
+fix: stabilize CI and database bootstrap
+feat: implement stage one control plane
+chore(task): archive 00-bootstrap-guidelines
 ```
 
-可确认的本地模式是 Conventional Commit 前缀、英文简短 summary、前缀后使用冒号和空格。样本很少，因此不要从这两条记录推断固定 branch naming、merge strategy、scope 清单或 branch protection。
+GitHub 仓库只允许 squash merge，并通过 `Protect main` active ruleset 要求 PR、`test` check 与线性历史。PR title 会成为 squash commit title，因此 PR title 是 semantic-release 的版本输入。
 
 提交信息使用：
 
@@ -23,6 +24,18 @@ bea0eef fix: stabilize CI and database bootstrap
 - workflow 变更可使用 `ci:`，纯规范变更可使用 `docs(spec):`；这是按 Conventional Commit 语义选择 type，不表示历史中已经出现过这些前缀。
 - summary 保持英文、简短并描述实际动作；避免 `update files`、`misc changes` 等无法判断意图的表述。
 - `scope` 只有在边界明确且确实提高可读性时使用，不为追求格式强行添加。
+- 功能 PR 使用 `feat:`，缺陷 PR 使用 `fix:` 或 `perf:`；只影响 CI/发布实现但不新增产品能力时可使用 `ci:`。
+- release PR title 固定 `chore(release): vX.Y.Z`，不得在合并时改成不匹配 Publish guard 的标题。
+- breaking change 使用 `type!:` 或在 commit body 中写 `BREAKING CHANGE:`。
+
+## PR 与 merge contract
+
+- 所有进入 `main` 的代码、workflow、spec 和 release commit 都通过 PR。
+- `main` 禁止 deletion、force push/non-fast-forward，要求 `test` 成功并与最新 main 同步。
+- 仓库不允许 merge commit 或 rebase merge，只允许 squash。
+- squash title 使用 PR title，squash body 使用 PR body；PR title 必须在 merge 前保持有效 Conventional Commit。
+- 个人仓库当前不要求 approval count，但所有 review conversation 必须解决。
+- 合并后 GitHub 自动删除 head branch。
 
 ## 提交分组与精确暂存
 
@@ -84,7 +97,7 @@ chore: record journal
 - 不自动 push；远端写入必须来自明确需求。
 - 已共享或已 push 的历史默认不可重写。确需重写时，必须先获得明确授权，说明受影响 commit 和 force push 风险，并确认 dirty worktree 已隔离。
 - 本地历史重写会改变 hash；若 Trellis task、journal 或其他文档已经引用旧 hash，必须同步检查引用是否失效。
-- 当前仓库没有可证明的 branch protection、强制 PR 或 merge strategy 约定，本规范不替 GitHub 仓库设置作出假设。
+- 不通过管理员临时 bypass 或 force push 绕过 `Protect main`；规则配置错误时显式修改/停用 ruleset，并记录原因。
 
 ## 按改动验证
 
@@ -102,4 +115,5 @@ workflow 变更按 [GitHub Actions 规范](./github-actions-guidelines.md) 运�
 - 把未知 dirty files 静默放进当前 commit。
 - 用一个含糊 commit 同时提交 work、task archive 和 journal。
 - 因为文件被 ignore 就把 credential、数据库、cache 或 runtime 强制加入版本控制。
-- 在没有仓库证据时宣称必须 squash、必须使用某个 branch 名或已经启用 branch protection。
+- 使用非 Conventional PR title 后依赖 squash merge进入 `main`，导致 semantic-release 无法判断 bump。
+- 为省事临时允许 merge commit/rebase merge，破坏 `main` 的单提交 PR 历史契约。
