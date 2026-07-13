@@ -14,7 +14,7 @@
 - `pyproject.toml` 中的 `tool.semantic_release`
 - `CHANGELOG.md`
 - `scripts/stamp_web_version.py`
-- `Dockerfile`、`.dockerignore`、`docker-compose.yml`
+- `Dockerfile`、`.dockerignore`、`docker-compose.yml`、`docker-compose.live-worker.yml`、两套 Compose 环境变量示例
 - 影响 Git tag、GitHub Release、GHCR image tag、版本文件同步或 `main` ruleset 的改动。
 
 当前策略：普通 PR 与 `main` push 只运行 CI；维护者手动准备 release PR；release PR squash merge 且 `main` CI 成功后自动发布正式版本。项目不发布 beta/canary，也不为普通 PR 或每次 `main` push 推送镜像。
@@ -74,7 +74,9 @@ Compose：
 
 ```bash
 docker compose up --build
-docker compose --profile workers up --build
+CONTROL_PLANE_URL=https://infinex.example.com \
+LIVE_WORKER_ID=live-node-01 \
+  docker compose -f docker-compose.live-worker.yml up
 ```
 
 ### 3. Contracts
@@ -165,8 +167,11 @@ docker compose --profile workers up --build
 - Runtime 使用非 root `infinex` 用户，只复制 `.venv`、`src/`、`alembic.ini`、`migrations/` 和 `web/dist`。
 - Runtime 不复制 `web/node_modules`、Web 源码或 Bun/Node runtime。
 - 容器默认使用 `/app/data`、`/app/web/dist`，暴露 `8002`，`CMD` 为 `infinex serve`。
-- Compose 默认只启动 control plane，不内置数据库服务。`DATABASE_URL` 未设置或为空时使用 `/app/data/infinex.db` SQLite；设置后直接连接对应外部数据库。
-- Compose 在 `workers` profile 下提供 backtest/live workers；不得重新引入旧 Redis、内置 PostgreSQL 或失效环境变量。
+- `docker-compose.yml` 同机启动 Control Plane 与 backtest worker，不内置数据库服务。`DATABASE_URL` 未设置或为空时使用 `/app/data/infinex.db` SQLite；设置后直接连接对应外部数据库。
+- `docker-compose.live-worker.yml` 只启动 live worker，不声明本地 Control Plane 或 `depends_on`；必须显式提供可路由的 `CONTROL_PLANE_URL` 与稳定唯一的 `LIVE_WORKER_ID`。
+- Control Plane、backtest worker 与 live worker 分别 bind mount `${INFINEX_DATA_ROOT}/control-plane`、`${INFINEX_DATA_ROOT}/backtest-worker`、`${INFINEX_DATA_ROOT}/live-worker`。宿主机必须预创建目录并授予 UID/GID `10001` 写权限；迁移时停机复制对应目录并保留权限。
+- Compose 专用变量分别记录在 `.env.control-plane.example` 与 `.env.live-worker.example`；实际部署文件使用被 Git 忽略的无 `.example` 副本，并通过 `docker compose --env-file` 显式加载。应用 `.env.example` 只包含 `Settings` 已声明字段，避免 Pydantic dotenv 的 extra field 校验失败。
+- Compose 不得重新引入旧 Redis、内置 PostgreSQL、跨机器 Docker service DNS 或失效环境变量。
 
 #### Repository contract
 
@@ -199,8 +204,10 @@ PR title 必须使用 Conventional Commit。semantic-release 读取进入 `main`
 | GHCR push 失败 | tag/Release 尚未创建；修复后手动重跑 Publish |
 | Web/Python 版本漂移 | Prepare 的 stamp script 将 Web version 同步到新版本 |
 | Docker runtime 缺 migration 文件 | 应视为构建缺陷；应用启动时 Alembic 无法升级 |
-| Compose 未设置或传入空 `DATABASE_URL` | 使用 named volume 中的 SQLite `/app/data/infinex.db` |
+| Compose 未设置或传入空 `DATABASE_URL` | 使用 Control Plane bind mount 目录中的 SQLite `/app/data/infinex.db` |
 | Compose 设置外部 `DATABASE_URL` | Control Plane 直接连接该数据库；连接或 migration 失败时容器启动失败 |
+| live worker 未设置 `CONTROL_PLANE_URL` 或 `LIVE_WORKER_ID` | Compose 插值失败，不启动配置不完整的远程 worker |
+| bind mount 目录不存在或 UID/GID `10001` 不可写 | Compose/runtime 启动失败；先创建目录并修复宿主机权限 |
 | PR image build 或 smoke test 失败 | 必需的 `test` check 失败，ruleset 阻止 merge |
 | action 未 pin SHA | `zizmor`/review 失败，必须修复 |
 
@@ -245,6 +252,9 @@ bun run build
 ```bash
 docker build -t infinex:local .
 docker compose config
+CONTROL_PLANE_URL=https://infinex.example.com \
+LIVE_WORKER_ID=live-node-01 \
+  docker compose -f docker-compose.live-worker.yml config
 docker compose up --build
 curl -fsS http://127.0.0.1:8002/api/health
 curl -fsS http://127.0.0.1:8002/

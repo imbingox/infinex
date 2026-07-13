@@ -6,7 +6,7 @@
 
 - 三个 GitHub Actions workflow 的触发条件、权限、版本 guard 与发布顺序。
 - `pyproject.toml`、`CHANGELOG.md` 与 Web version stamping 的 semantic-release 契约。
-- `Dockerfile`、`.dockerignore`、`docker-compose.yml` 与 GHCR tags。
+- `Dockerfile`、`.dockerignore`、Control Plane/backtest 与 live worker 两套 Compose 文件，以及 GHCR tags。
 - PR title、squash merge、`main` ruleset、提交分组、dirty worktree 保护和 Trellis 收尾顺序。
 
 Python 代码质量细节仍以 `../backend/quality-guidelines.md` 为准；前端构建与静态托管以 `../frontend/web-console-guidelines.md` 为准。
