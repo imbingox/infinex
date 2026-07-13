@@ -12,9 +12,8 @@ services:
   infinex:
     <<: *infinex-service
     environment:
+      <<: *worker-environment
       ARTIFACT_DIR: /app/data/artifacts
-      WORKER_DATA_DIR: /app/data/workers
-      WORKER_ENROLLMENT_TOKEN: ${WORKER_ENROLLMENT_TOKEN:-change-me-before-production}
       DATABASE_URL: ${DATABASE_URL:-sqlite:////app/data/infinex.db}
     ports:
       - "8002:8002"

@@ -76,7 +76,10 @@ Compose：
 docker compose up --build
 CONTROL_PLANE_URL=https://infinex.example.com \
 LIVE_WORKER_ID=live-node-01 \
-  docker compose -f docker-compose.live-worker.yml up
+  docker compose \
+    --env-file .env.live-worker \
+    -f docker-compose.live-worker.yml \
+    up
 ```
 
 ### 3. Contracts
