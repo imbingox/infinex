@@ -19,7 +19,7 @@ def init_database() -> None:
 @app.command()
 def serve(
     host: Annotated[str, typer.Option(help="Bind host.")] = "0.0.0.0",
-    port: Annotated[int, typer.Option(help="Bind port.")] = 8002,
+    port: Annotated[int, typer.Option(envvar="INFINEX_PORT", help="Bind port.")] = 8002,
     reload: Annotated[bool, typer.Option(help="Enable development reload.")] = False,
 ) -> None:
     import uvicorn

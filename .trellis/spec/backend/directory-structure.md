@@ -63,7 +63,7 @@ Pydantic payload -> API route -> service/model mutation -> audit
 
 ## CLI 与配置
 
-`cli.py` 只做参数解析和对象装配，并在命令函数中延迟 import 具体服务，避免导入 CLI 时启动 Control Plane 或 Worker。新增运行参数优先进入 `Settings` 或 Typer option，并保持 `.env.example`、README 命令和进程测试一致。两个 worker 命令的 `worker_id`、`control_plane_url` 与 enrollment token 分别支持 `WORKER_ID`、`CONTROL_PLANE_URL`、`WORKER_ENROLLMENT_TOKEN`，供 Compose 直接加载部署环境文件。
+`cli.py` 只做参数解析和对象装配，并在命令函数中延迟 import 具体服务，避免导入 CLI 时启动 Control Plane 或 Worker。新增运行参数优先进入 `Settings` 或 Typer option，并保持 `.env.example`、README 命令和进程测试一致。`serve` 的端口支持 `INFINEX_PORT`；两个 worker 命令的 `worker_id`、`control_plane_url` 与 enrollment token 分别支持 `WORKER_ID`、`CONTROL_PLANE_URL`、`WORKER_ENROLLMENT_TOKEN`，供 Compose 通过标准 `.env` 统一配置。`Settings` 忽略 dotenv 中只属于 CLI/Compose 的字段，避免同一文件在进程装配时触发 extra field 错误。
 
 ## 命名与放置规则
 

@@ -67,15 +67,15 @@ For production, run `bun run build` before starting the control plane. FastAPI s
 docker compose up -d --build
 ```
 
-生产部署时复制环境模板并至少替换 enrollment token；该文件会由 Compose 自动加载，不需要额外的 `--env-file` 参数：
+生产部署时将 Control Plane 模板复制为标准 `.env` 并至少替换 enrollment token；Docker Compose 会自动读取该文件，不需要额外参数：
 
 ```bash
-cp .env.control-plane.example .env.control-plane
-# 编辑 .env.control-plane，至少替换 WORKER_ENROLLMENT_TOKEN
+cp .env.control-plane.example .env
+# 编辑 .env，至少替换 WORKER_ENROLLMENT_TOKEN
 docker compose up -d --build
 ```
 
-Web Console 与 API 位于 `http://127.0.0.1:8002`。未提供 `.env.control-plane` 时，镜像默认使用 `data/control-plane/infinex.db`；连接外部 PostgreSQL 时，在 `.env.control-plane` 中填写非空的完整 URL：
+`INFINEX_PORT` 同时控制容器监听端口、宿主机映射端口、healthcheck 和 backtest worker 的内网地址，默认值为 `8002`。例如设置 `INFINEX_PORT=9000` 后，Web Console 位于 `http://127.0.0.1:9000`，API 与文档分别位于 `/api` 和 `/docs`。未提供 `.env` 时，镜像默认使用 `data/control-plane/infinex.db`；连接外部 PostgreSQL 时，在 `.env` 中填写完整 URL：
 
 ```dotenv
 DATABASE_URL=postgresql+psycopg://user:password@database.example.com/infinex
@@ -87,15 +87,15 @@ docker compose up -d --build
 
 `data/control-plane` 保存 SQLite 与策略产物，`data/backtest-worker` 保存 backtest worker 的凭据和工作目录；迁移时停止容器并复制整个 `data/` 目录。
 
-Live worker 使用独立的 `docker-compose.live-worker.yml` 部署到交易机器，不依赖本机 Docker 网络中的 Control Plane。复制环境模板后，只需填写该机器可访问的 HTTPS/私网地址、稳定唯一的 `WORKER_ID` 和 enrollment token：
+Live worker 使用独立的 `docker-compose.live-worker.yml` 部署到交易机器，不依赖本机 Docker 网络中的 Control Plane。在 live worker 机器上同样将对应模板复制为标准 `.env`，然后填写该机器可访问的 HTTPS/私网地址（包含非默认端口时的端口号）、稳定唯一的 `WORKER_ID` 和 enrollment token：
 
 ```bash
-cp .env.live-worker.example .env.live-worker
-# 编辑 .env.live-worker 中的 CONTROL_PLANE_URL、WORKER_ID 和 enrollment token
+cp .env.live-worker.example .env
+# 编辑 .env 中的 CONTROL_PLANE_URL、WORKER_ID 和 enrollment token
 docker compose -f docker-compose.live-worker.yml up -d
 ```
 
-Live worker 同样由 Compose 以 root 用户运行，其持久凭据位于 `data/live-worker`。迁移该 worker 时应连同此目录一起复制，避免迁移后重新 enrollment。在本地开发之外使用任一 Compose 文件前，Control Plane 与 worker 必须配置相同的初始 `WORKER_ENROLLMENT_TOKEN`。`.env.control-plane` 与 `.env.live-worker` 均已被 Git 忽略，不要提交真实 token。
+Live worker 同样由 Compose 以 root 用户运行，其持久凭据位于 `data/live-worker`。迁移该 worker 时应连同此目录一起复制，避免迁移后重新 enrollment。在本地开发之外使用任一 Compose 文件前，Control Plane 与 worker 必须配置相同的初始 `WORKER_ENROLLMENT_TOKEN`。实际部署使用的 `.env` 已被 Git 忽略，不要提交真实 token。
 
 正式版本发布到 GHCR：
 

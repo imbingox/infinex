@@ -4,8 +4,9 @@ services:
     user: "0:0"
     restart: unless-stopped
     command: ["infinex", "live-agent"]
-    env_file:
-      - path: ${INFINEX_ENV_FILE:-.env.live-worker}
-        required: true
+    environment:
+      CONTROL_PLANE_URL: ${CONTROL_PLANE_URL:?set CONTROL_PLANE_URL in .env}
+      WORKER_ENROLLMENT_TOKEN: ${WORKER_ENROLLMENT_TOKEN:?set WORKER_ENROLLMENT_TOKEN in .env}
+      WORKER_ID: ${WORKER_ID:?set WORKER_ID in .env}
     volumes:
       - ./data/live-worker:/app/data/workers

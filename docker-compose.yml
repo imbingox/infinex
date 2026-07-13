@@ -7,18 +7,19 @@ x-infinex-service: &infinex-service
 services:
   infinex:
     <<: *infinex-service
-    env_file:
-      - path: ${INFINEX_ENV_FILE:-.env.control-plane}
-        required: false
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-sqlite:////app/data/infinex.db}
+      INFINEX_PORT: ${INFINEX_PORT:-8002}
+      WORKER_ENROLLMENT_TOKEN: ${WORKER_ENROLLMENT_TOKEN:-development-enrollment-token}
     ports:
-      - "8002:8002"
+      - "${INFINEX_PORT:-8002}:${INFINEX_PORT:-8002}"
     healthcheck:
       test:
         [
           "CMD",
           "python",
           "-c",
-          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8002/api/health', timeout=5).read()",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:${INFINEX_PORT:-8002}/api/health', timeout=5).read()",
         ]
       interval: 30s
       timeout: 10s
@@ -33,10 +34,9 @@ services:
     depends_on:
       infinex:
         condition: service_healthy
-    env_file:
-      - path: ${INFINEX_ENV_FILE:-.env.control-plane}
-        required: false
     environment:
-      CONTROL_PLANE_URL: http://infinex:8002
+      CONTROL_PLANE_URL: http://infinex:${INFINEX_PORT:-8002}
+      WORKER_ENROLLMENT_TOKEN: ${WORKER_ENROLLMENT_TOKEN:-development-enrollment-token}
+      WORKER_ID: ${WORKER_ID:-backtest-compose}
     volumes:
       - ./data/backtest-worker:/app/data/workers
