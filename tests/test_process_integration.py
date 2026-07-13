@@ -76,6 +76,10 @@ def running_platform(
     server_log = (tmp_path / "server.log").open("ab")
     agent_log_path = tmp_path / "agent.log"
     agent_log = agent_log_path.open("ab")
+    server_environment = {
+        **process_environment,
+        "INFINEX_PORT": str(port),
+    }
 
     def start_server() -> subprocess.Popen[bytes]:
         process = subprocess.Popen(
@@ -86,10 +90,8 @@ def running_platform(
                 "serve",
                 "--host",
                 "127.0.0.1",
-                "--port",
-                str(port),
             ],
-            env=process_environment,
+            env=server_environment,
             stdout=server_log,
             stderr=subprocess.STDOUT,
         )
@@ -98,22 +100,21 @@ def running_platform(
 
     server = start_server()
     work_dir = tmp_path / "live-agent"
+    agent_environment = {
+        **process_environment,
+        "CONTROL_PLANE_URL": base_url,
+        "WORKER_ID": "live-process",
+    }
     agent = subprocess.Popen(
         [
             sys.executable,
             "-m",
             "infinex.cli",
             "live-agent",
-            "--worker-id",
-            "live-process",
-            "--control-plane-url",
-            base_url,
-            "--token",
-            "process-enrollment-token",
             "--work-dir",
             str(work_dir),
         ],
-        env=process_environment,
+        env=agent_environment,
         stdout=agent_log,
         stderr=subprocess.STDOUT,
     )
@@ -191,6 +192,10 @@ def test_live_agent_runner_and_socket_reconnect(
     os.kill(runner_pid, 0)
 
     port = int(base_url.rsplit(":", 1)[1])
+    restarted_server_environment = {
+        **process_environment,
+        "INFINEX_PORT": str(port),
+    }
     server_log = Path(agent_log_path).with_name("server-restarted.log").open("ab")
     restarted_server = subprocess.Popen(
         [
@@ -200,10 +205,8 @@ def test_live_agent_runner_and_socket_reconnect(
             "serve",
             "--host",
             "127.0.0.1",
-            "--port",
-            str(port),
         ],
-        env=process_environment,
+        env=restarted_server_environment,
         stdout=server_log,
         stderr=subprocess.STDOUT,
     )

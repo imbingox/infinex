@@ -19,7 +19,7 @@ def init_database() -> None:
 @app.command()
 def serve(
     host: Annotated[str, typer.Option(help="Bind host.")] = "0.0.0.0",
-    port: Annotated[int, typer.Option(help="Bind port.")] = 8002,
+    port: Annotated[int, typer.Option(envvar="INFINEX_PORT", help="Bind port.")] = 8002,
     reload: Annotated[bool, typer.Option(help="Enable development reload.")] = False,
 ) -> None:
     import uvicorn
@@ -38,8 +38,14 @@ def serve(
 
 @app.command("live-agent")
 def live_agent(
-    worker_id: Annotated[str, typer.Option(help="Stable worker identifier.")] = "live-local",
-    control_plane_url: Annotated[str, typer.Option()] = "http://127.0.0.1:8002",
+    worker_id: Annotated[
+        str,
+        typer.Option(envvar="WORKER_ID", help="Stable worker identifier."),
+    ] = "live-local",
+    control_plane_url: Annotated[
+        str,
+        typer.Option(envvar="CONTROL_PLANE_URL"),
+    ] = "http://127.0.0.1:8002",
     runtime_version: Annotated[str, typer.Option()] = "py313-nautilus-mock",
     capacity: Annotated[int, typer.Option(min=1)] = 2,
     token: Annotated[str | None, typer.Option(envvar="WORKER_ENROLLMENT_TOKEN")] = None,
@@ -67,8 +73,14 @@ def live_agent(
 
 @app.command("backtest-worker")
 def backtest_worker(
-    worker_id: Annotated[str, typer.Option(help="Stable worker identifier.")] = "backtest-local",
-    control_plane_url: Annotated[str, typer.Option()] = "http://127.0.0.1:8002",
+    worker_id: Annotated[
+        str,
+        typer.Option(envvar="WORKER_ID", help="Stable worker identifier."),
+    ] = "backtest-local",
+    control_plane_url: Annotated[
+        str,
+        typer.Option(envvar="CONTROL_PLANE_URL"),
+    ] = "http://127.0.0.1:8002",
     runtime_version: Annotated[str, typer.Option()] = "py313-nautilus-mock",
     token: Annotated[str | None, typer.Option(envvar="WORKER_ENROLLMENT_TOKEN")] = None,
     work_dir: Annotated[Path | None, typer.Option()] = None,
