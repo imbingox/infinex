@@ -1,0 +1,77 @@
+x-infinex-service: &infinex-service
+  image: ghcr.io/imbingox/infinex:latest
+  build:
+    context: .
+  restart: unless-stopped
+
+x-infinex-environment: &infinex-environment
+  ARTIFACT_DIR: /app/data/artifacts
+  WORKER_DATA_DIR: /app/data/workers
+  WORKER_ENROLLMENT_TOKEN: ${WORKER_ENROLLMENT_TOKEN:-change-me-before-production}
+
+services:
+  infinex:
+    <<: *infinex-service
+    environment:
+      <<: *infinex-environment
+      DATABASE_URL: ${DATABASE_URL:-sqlite:////app/data/infinex.db}
+    ports:
+      - "8002:8002"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8002/api/health', timeout=5).read()",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    volumes:
+      - infinex-data:/app/data
+
+  backtest-worker:
+    <<: *infinex-service
+    profiles: ["workers"]
+    command:
+      [
+        "infinex",
+        "backtest-worker",
+        "--worker-id",
+        "backtest-compose",
+        "--control-plane-url",
+        "http://infinex:8002",
+      ]
+    depends_on:
+      infinex:
+        condition: service_healthy
+    environment:
+      <<: *infinex-environment
+    volumes:
+      - worker-data:/app/data/workers
+
+  live-agent:
+    <<: *infinex-service
+    profiles: ["workers"]
+    command:
+      [
+        "infinex",
+        "live-agent",
+        "--worker-id",
+        "live-compose",
+        "--control-plane-url",
+        "http://infinex:8002",
+      ]
+    depends_on:
+      infinex:
+        condition: service_healthy
+    environment:
+      <<: *infinex-environment
+    volumes:
+      - worker-data:/app/data/workers
+
+volumes:
+  infinex-data:
+  worker-data:
