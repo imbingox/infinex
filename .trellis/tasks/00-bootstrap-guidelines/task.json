@@ -1,0 +1,32 @@
+{
+  "id": "00-bootstrap-guidelines",
+  "name": "00-bootstrap-guidelines",
+  "title": "初始化项目开发规范",
+  "description": "为 AI 代理补充基于当前仓库事实的项目开发规范",
+  "status": "in_progress",
+  "dev_type": "docs",
+  "scope": null,
+  "package": null,
+  "priority": "P1",
+  "creator": "imbingox",
+  "assignee": "imbingox",
+  "createdAt": "2026-07-13",
+  "completedAt": null,
+  "branch": null,
+  "base_branch": null,
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": null,
+  "relatedFiles": [
+    "AGENTS.md",
+    "pyproject.toml",
+    ".trellis/spec/backend/",
+    ".trellis/spec/frontend/",
+    ".trellis/spec/ops/"
+  ],
+  "notes": "由 trellis init 首次创建的规范初始化任务，覆盖后端、前端、交付规范与项目级代理规则",
+  "meta": {}
+}

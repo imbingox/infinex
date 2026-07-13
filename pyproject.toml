@@ -46,6 +46,7 @@ markers = [
 [tool.ruff]
 line-length = 100
 target-version = "py313"
+exclude = [".claude", ".codex", ".trellis"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B"]
