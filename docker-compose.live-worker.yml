@@ -1,6 +1,7 @@
 services:
   live-agent:
     image: ${INFINEX_IMAGE:-ghcr.io/imbingox/infinex:latest}
+    user: "0:0"
     restart: unless-stopped
     command:
       [
@@ -15,8 +16,4 @@ services:
       WORKER_DATA_DIR: /app/data/workers
       WORKER_ENROLLMENT_TOKEN: ${WORKER_ENROLLMENT_TOKEN:-change-me-before-production}
     volumes:
-      - type: bind
-        source: ${INFINEX_DATA_ROOT:-./data}/live-worker
-        target: /app/data/workers
-        bind:
-          create_host_path: false
+      - ${INFINEX_DATA_ROOT:-./data}/live-worker:/app/data/workers

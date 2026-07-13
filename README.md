@@ -60,13 +60,11 @@ For production, run `bun run build` before starting the control plane. FastAPI s
 
 ## 容器运行
 
-默认的 `docker-compose.yml` 在同一台机器上启动 Control Plane 与 backtest worker。先创建宿主机数据目录，并将目录交给镜像中的非 root 用户（UID/GID `10001`）：
+默认的 `docker-compose.yml` 在同一台机器上启动 Control Plane 与 backtest worker。Compose 中的容器显式以 root 用户运行，bind mount 目录不存在时由 Docker 自动创建：
 
 ```bash
 cp .env.control-plane.example .env.control-plane
 # 编辑 .env.control-plane，至少替换 WORKER_ENROLLMENT_TOKEN
-mkdir -p data/control-plane data/backtest-worker
-sudo chown -R 10001:10001 data/control-plane data/backtest-worker
 docker compose --env-file .env.control-plane up -d --build
 ```
 
@@ -80,22 +78,20 @@ DATABASE_URL=postgresql+psycopg://user:password@database.example.com/infinex
 docker compose --env-file .env.control-plane up -d --build
 ```
 
-`data/control-plane` 保存 SQLite 与策略产物，`data/backtest-worker` 保存 backtest worker 的凭据和工作目录。可以通过 `INFINEX_DATA_ROOT=/srv/infinex` 将两者统一放到其他宿主机目录；迁移时停止容器并复制整个数据根目录，同时保留 UID/GID `10001` 的写权限。
+`data/control-plane` 保存 SQLite 与策略产物，`data/backtest-worker` 保存 backtest worker 的凭据和工作目录。可以通过 `INFINEX_DATA_ROOT=/srv/infinex` 将两者统一放到其他宿主机目录；迁移时停止容器并复制整个数据根目录。
 
 Live worker 使用独立的 `docker-compose.live-worker.yml` 部署到交易机器，不依赖本机 Docker 网络中的 Control Plane。其 URL 必须是该机器能够访问的 HTTPS 或私网地址，`LIVE_WORKER_ID` 必须保持稳定且唯一：
 
 ```bash
 cp .env.live-worker.example .env.live-worker
 # 编辑 .env.live-worker 中的 URL、worker ID 和 enrollment token
-mkdir -p data/live-worker
-sudo chown -R 10001:10001 data/live-worker
 docker compose \
   --env-file .env.live-worker \
   -f docker-compose.live-worker.yml \
   up -d
 ```
 
-Live worker 的持久凭据位于 `data/live-worker`。迁移该 worker 时应连同此目录一起复制，避免迁移后重新 enrollment。在本地开发之外使用任一 Compose 文件前，Control Plane 与 worker 必须配置相同的初始 `WORKER_ENROLLMENT_TOKEN`。`.env.control-plane` 与 `.env.live-worker` 均已被 Git 忽略，不要提交真实 token。
+Live worker 同样由 Compose 以 root 用户运行，其持久凭据位于 `data/live-worker`。迁移该 worker 时应连同此目录一起复制，避免迁移后重新 enrollment。在本地开发之外使用任一 Compose 文件前，Control Plane 与 worker 必须配置相同的初始 `WORKER_ENROLLMENT_TOKEN`。`.env.control-plane` 与 `.env.live-worker` 均已被 Git 忽略，不要提交真实 token。
 
 正式版本发布到 GHCR：
 

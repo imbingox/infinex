@@ -2,6 +2,7 @@ x-infinex-service: &infinex-service
   image: ${INFINEX_IMAGE:-ghcr.io/imbingox/infinex:latest}
   build:
     context: .
+  user: "0:0"
   restart: unless-stopped
 
 x-worker-environment: &worker-environment
@@ -30,11 +31,7 @@ services:
       retries: 3
       start_period: 30s
     volumes:
-      - type: bind
-        source: ${INFINEX_DATA_ROOT:-./data}/control-plane
-        target: /app/data
-        bind:
-          create_host_path: false
+      - ${INFINEX_DATA_ROOT:-./data}/control-plane:/app/data
 
   backtest-worker:
     <<: *infinex-service
@@ -53,8 +50,4 @@ services:
     environment:
       <<: *worker-environment
     volumes:
-      - type: bind
-        source: ${INFINEX_DATA_ROOT:-./data}/backtest-worker
-        target: /app/data/workers
-        bind:
-          create_host_path: false
+      - ${INFINEX_DATA_ROOT:-./data}/backtest-worker:/app/data/workers
