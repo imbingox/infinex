@@ -6,6 +6,17 @@ This file is maintained by `python-semantic-release`.
 
 <!-- version list -->
 
+## v0.1.1 (2026-07-13)
+
+### Bug Fixes
+
+- **ops**: Simplify compose deployment ([#4](https://github.com/imbingox/infinex/pull/4),
+  [`75e2b4e`](https://github.com/imbingox/infinex/commit/75e2b4e9e81f113aff792446e394b0226e5e0848))
+
+- **ops**: Split live worker deployment ([#3](https://github.com/imbingox/infinex/pull/3),
+  [`1cdddad`](https://github.com/imbingox/infinex/commit/1cdddad5ea20889bb7adb75c36c899a3ccf1f5c2))
+
+
 ## v0.1.0 (2026-07-13)
 
 ### Bug Fixes
