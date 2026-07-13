@@ -10,29 +10,11 @@ x-infinex-environment: &infinex-environment
   WORKER_ENROLLMENT_TOKEN: ${WORKER_ENROLLMENT_TOKEN:-change-me-before-production}
 
 services:
-  postgres:
-    image: postgres:17
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: infinex
-      POSTGRES_USER: infinex
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-infinex}
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U infinex -d infinex"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    volumes:
-      - postgres-data:/var/lib/postgresql/data
-
   infinex:
     <<: *infinex-service
-    depends_on:
-      postgres:
-        condition: service_healthy
     environment:
       <<: *infinex-environment
-      DATABASE_URL: postgresql+psycopg://infinex:${POSTGRES_PASSWORD:-infinex}@postgres:5432/infinex
+      DATABASE_URL: ${DATABASE_URL:-sqlite:////app/data/infinex.db}
     ports:
       - "8002:8002"
     healthcheck:
@@ -92,5 +74,4 @@ services:
 
 volumes:
   infinex-data:
-  postgres-data:
   worker-data:

@@ -60,13 +60,20 @@ For production, run `bun run build` before starting the control plane. FastAPI s
 
 ## 容器运行
 
-构建并启动 PostgreSQL 与 Control Plane：
+构建并启动 Control Plane：
 
 ```bash
 docker compose up --build
 ```
 
-Web Console 与 API 位于 `http://127.0.0.1:8002`。Compose 使用 named volume 保存 PostgreSQL 与 Infinex 数据；在本地开发之外使用该示例前，必须显式设置 `POSTGRES_PASSWORD` 与 `WORKER_ENROLLMENT_TOKEN`。
+Web Console 与 API 位于 `http://127.0.0.1:8002`。未设置 `DATABASE_URL`（或值为空）时，Compose 使用 named volume 中的 SQLite 数据库；连接外部 PostgreSQL 时直接传入完整 URL：
+
+```bash
+DATABASE_URL='postgresql+psycopg://user:password@database.example.com/infinex' \
+  docker compose up --build
+```
+
+在本地开发之外使用该示例前，必须显式设置 `WORKER_ENROLLMENT_TOKEN`。
 
 使用同一镜像启动可选的 backtest/live workers：
 

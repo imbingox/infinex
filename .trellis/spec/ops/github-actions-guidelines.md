@@ -165,7 +165,8 @@ docker compose --profile workers up --build
 - Runtime 使用非 root `infinex` 用户，只复制 `.venv`、`src/`、`alembic.ini`、`migrations/` 和 `web/dist`。
 - Runtime 不复制 `web/node_modules`、Web 源码或 Bun/Node runtime。
 - 容器默认使用 `/app/data`、`/app/web/dist`，暴露 `8002`，`CMD` 为 `infinex serve`。
-- Compose 包含 PostgreSQL、control plane，以及 `workers` profile 下的 backtest/live workers；不得重新引入旧 Redis 或失效环境变量。
+- Compose 默认只启动 control plane，不内置数据库服务。`DATABASE_URL` 未设置或为空时使用 `/app/data/infinex.db` SQLite；设置后直接连接对应外部数据库。
+- Compose 在 `workers` profile 下提供 backtest/live workers；不得重新引入旧 Redis、内置 PostgreSQL 或失效环境变量。
 
 #### Repository contract
 
@@ -198,6 +199,8 @@ PR title 必须使用 Conventional Commit。semantic-release 读取进入 `main`
 | GHCR push 失败 | tag/Release 尚未创建；修复后手动重跑 Publish |
 | Web/Python 版本漂移 | Prepare 的 stamp script 将 Web version 同步到新版本 |
 | Docker runtime 缺 migration 文件 | 应视为构建缺陷；应用启动时 Alembic 无法升级 |
+| Compose 未设置或传入空 `DATABASE_URL` | 使用 named volume 中的 SQLite `/app/data/infinex.db` |
+| Compose 设置外部 `DATABASE_URL` | Control Plane 直接连接该数据库；连接或 migration 失败时容器启动失败 |
 | PR image build 或 smoke test 失败 | 必需的 `test` check 失败，ruleset 阻止 merge |
 | action 未 pin SHA | `zizmor`/review 失败，必须修复 |
 
