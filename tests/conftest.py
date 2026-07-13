@@ -47,4 +47,4 @@ def client(session: Session, tmp_path: Path) -> Generator[TestClient]:
 
 @pytest.fixture
 def worker_headers() -> dict[str, str]:
-    return {"X-Worker-Token": "test-enrollment-token"}
+    return {"X-Worker-Token": get_settings().worker_enrollment_token}
