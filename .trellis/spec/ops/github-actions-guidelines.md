@@ -74,12 +74,7 @@ Compose：
 
 ```bash
 docker compose up --build
-CONTROL_PLANE_URL=https://infinex.example.com \
-LIVE_WORKER_ID=live-node-01 \
-  docker compose \
-    --env-file .env.live-worker \
-    -f docker-compose.live-worker.yml \
-    up
+docker compose -f docker-compose.live-worker.yml up
 ```
 
 ### 3. Contracts
@@ -170,10 +165,11 @@ LIVE_WORKER_ID=live-node-01 \
 - Runtime image 默认使用非 root `infinex` 用户，只复制 `.venv`、`src/`、`alembic.ini`、`migrations/` 和 `web/dist`；两套 Compose 部署显式通过 `user: "0:0"` 以 root 运行。
 - Runtime 不复制 `web/node_modules`、Web 源码或 Bun/Node runtime。
 - 容器默认使用 `/app/data`、`/app/web/dist`，暴露 `8002`，`CMD` 为 `infinex serve`。
-- `docker-compose.yml` 同机启动 Control Plane 与 backtest worker，不内置数据库服务。`DATABASE_URL` 未设置或为空时使用 `/app/data/infinex.db` SQLite；设置后直接连接对应外部数据库。
-- `docker-compose.live-worker.yml` 只启动 live worker，不声明本地 Control Plane 或 `depends_on`；必须显式提供可路由的 `CONTROL_PLANE_URL` 与稳定唯一的 `LIVE_WORKER_ID`。
-- Control Plane、backtest worker 与 live worker 分别通过短格式 bind mount `${INFINEX_DATA_ROOT}/control-plane`、`${INFINEX_DATA_ROOT}/backtest-worker`、`${INFINEX_DATA_ROOT}/live-worker`。目录不存在时由 Docker 自动创建；迁移时停机复制对应目录。
-- Compose 专用变量分别记录在 `.env.control-plane.example` 与 `.env.live-worker.example`；实际部署文件使用被 Git 忽略的无 `.example` 副本，并通过 `docker compose --env-file` 显式加载。应用 `.env.example` 只包含 `Settings` 已声明字段，避免 Pydantic dotenv 的 extra field 校验失败。
+- `docker-compose.yml` 同机启动 Control Plane 与 backtest worker，不内置数据库服务。未提供 `.env.control-plane` 时使用 image 默认的 `/app/data/infinex.db` SQLite；env file 中的 `DATABASE_URL` 必须非空，设置后直接连接对应数据库。
+- `docker-compose.live-worker.yml` 只启动 live worker，不声明本地 Control Plane 或 `depends_on`；`.env.live-worker` 必须提供可路由的 `CONTROL_PLANE_URL`、稳定唯一的 `WORKER_ID` 和 enrollment token。
+- Control Plane、backtest worker 与 live worker 分别通过短格式 bind mount `./data/control-plane`、`./data/backtest-worker`、`./data/live-worker`。目录不存在时由 Docker 自动创建；迁移时停机复制对应 `data/` 目录。
+- Worker CLI 直接从 `WORKER_ID`、`CONTROL_PLANE_URL` 与 `WORKER_ENROLLMENT_TOKEN` 读取部署参数，因此两套 Compose 的 worker command 只覆盖子命令，不重复展开 options。
+- Compose 专用变量分别记录在 `.env.control-plane.example` 与 `.env.live-worker.example`；实际部署文件使用被 Git 忽略的无 `.example` 副本，并由 Compose service `env_file` 自动加载。Control Plane env file 可选以支持零配置本地启动，live worker env file 必填以避免连接错误目标。应用 `.env.example` 只包含 `Settings` 已声明字段，避免 Pydantic dotenv 的 extra field 校验失败。
 - Compose 不得重新引入旧 Redis、内置 PostgreSQL、跨机器 Docker service DNS 或失效环境变量。
 
 #### Repository contract
@@ -207,9 +203,10 @@ PR title 必须使用 Conventional Commit。semantic-release 读取进入 `main`
 | GHCR push 失败 | tag/Release 尚未创建；修复后手动重跑 Publish |
 | Web/Python 版本漂移 | Prepare 的 stamp script 将 Web version 同步到新版本 |
 | Docker runtime 缺 migration 文件 | 应视为构建缺陷；应用启动时 Alembic 无法升级 |
-| Compose 未设置或传入空 `DATABASE_URL` | 使用 Control Plane bind mount 目录中的 SQLite `/app/data/infinex.db` |
+| Compose 未提供 `.env.control-plane` | 使用 Control Plane bind mount 目录中的 SQLite `/app/data/infinex.db` |
+| `.env.control-plane` 中的 `DATABASE_URL` 为空 | 配置无效；填写完整 SQLite/PostgreSQL URL 或删除 env file 使用 image 默认值 |
 | Compose 设置外部 `DATABASE_URL` | Control Plane 直接连接该数据库；连接或 migration 失败时容器启动失败 |
-| live worker 未设置 `CONTROL_PLANE_URL` 或 `LIVE_WORKER_ID` | Compose 插值失败，不启动配置不完整的远程 worker |
+| live worker 缺少 `.env.live-worker` | Compose 配置失败，不启动配置不完整的远程 worker |
 | bind mount 目录不存在 | Docker 通过短格式 bind mount 自动创建目录，Compose 容器以 root 用户写入 |
 | PR image build 或 smoke test 失败 | 必需的 `test` check 失败，ruleset 阻止 merge |
 | action 未 pin SHA | `zizmor`/review 失败，必须修复 |
@@ -255,8 +252,7 @@ bun run build
 ```bash
 docker build -t infinex:local .
 docker compose config
-CONTROL_PLANE_URL=https://infinex.example.com \
-LIVE_WORKER_ID=live-node-01 \
+INFINEX_ENV_FILE=.env.live-worker.example \
   docker compose -f docker-compose.live-worker.yml config
 docker compose up --build
 curl -fsS http://127.0.0.1:8002/api/health

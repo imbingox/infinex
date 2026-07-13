@@ -1,21 +1,15 @@
 x-infinex-service: &infinex-service
   image: ${INFINEX_IMAGE:-ghcr.io/imbingox/infinex:latest}
-  build:
-    context: .
+  build: .
   user: "0:0"
   restart: unless-stopped
-
-x-worker-environment: &worker-environment
-  WORKER_DATA_DIR: /app/data/workers
-  WORKER_ENROLLMENT_TOKEN: ${WORKER_ENROLLMENT_TOKEN:-change-me-before-production}
 
 services:
   infinex:
     <<: *infinex-service
-    environment:
-      <<: *worker-environment
-      ARTIFACT_DIR: /app/data/artifacts
-      DATABASE_URL: ${DATABASE_URL:-sqlite:////app/data/infinex.db}
+    env_file:
+      - path: ${INFINEX_ENV_FILE:-.env.control-plane}
+        required: false
     ports:
       - "8002:8002"
     healthcheck:
@@ -31,23 +25,18 @@ services:
       retries: 3
       start_period: 30s
     volumes:
-      - ${INFINEX_DATA_ROOT:-./data}/control-plane:/app/data
+      - ./data/control-plane:/app/data
 
   backtest-worker:
     <<: *infinex-service
-    command:
-      [
-        "infinex",
-        "backtest-worker",
-        "--worker-id",
-        "${BACKTEST_WORKER_ID:-backtest-compose}",
-        "--control-plane-url",
-        "http://infinex:8002",
-      ]
+    command: ["infinex", "backtest-worker"]
     depends_on:
       infinex:
         condition: service_healthy
+    env_file:
+      - path: ${INFINEX_ENV_FILE:-.env.control-plane}
+        required: false
     environment:
-      <<: *worker-environment
+      CONTROL_PLANE_URL: http://infinex:8002
     volumes:
-      - ${INFINEX_DATA_ROOT:-./data}/backtest-worker:/app/data/workers
+      - ./data/backtest-worker:/app/data/workers

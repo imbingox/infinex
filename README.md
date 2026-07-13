@@ -46,6 +46,7 @@ uv run infinex live-agent --worker-id live-local
 ```
 
 Both workers read `WORKER_ENROLLMENT_TOKEN` on first registration; the development default is `development-enrollment-token`.
+Worker commands also accept `WORKER_ID` and `CONTROL_PLANE_URL`; the Compose files use these environment variables to keep their command overrides minimal.
 
 ## Web
 
@@ -60,35 +61,38 @@ For production, run `bun run build` before starting the control plane. FastAPI s
 
 ## 容器运行
 
-默认的 `docker-compose.yml` 在同一台机器上启动 Control Plane 与 backtest worker。Compose 中的容器显式以 root 用户运行，bind mount 目录不存在时由 Docker 自动创建：
+默认的 `docker-compose.yml` 在同一台机器上启动 Control Plane 与 backtest worker。Compose 中的容器显式以 root 用户运行，`data/` 下的 bind mount 目录不存在时由 Docker 自动创建。使用镜像内置的 SQLite 和开发 enrollment token 时可以直接启动：
+
+```bash
+docker compose up -d --build
+```
+
+生产部署时复制环境模板并至少替换 enrollment token；该文件会由 Compose 自动加载，不需要额外的 `--env-file` 参数：
 
 ```bash
 cp .env.control-plane.example .env.control-plane
 # 编辑 .env.control-plane，至少替换 WORKER_ENROLLMENT_TOKEN
-docker compose --env-file .env.control-plane up -d --build
+docker compose up -d --build
 ```
 
-Web Console 与 API 位于 `http://127.0.0.1:8002`。未设置 `DATABASE_URL`（或值为空）时，Compose 使用 `data/control-plane/infinex.db`；连接外部 PostgreSQL 时，在 `.env.control-plane` 中填写完整 URL：
+Web Console 与 API 位于 `http://127.0.0.1:8002`。未提供 `.env.control-plane` 时，镜像默认使用 `data/control-plane/infinex.db`；连接外部 PostgreSQL 时，在 `.env.control-plane` 中填写非空的完整 URL：
 
 ```dotenv
 DATABASE_URL=postgresql+psycopg://user:password@database.example.com/infinex
 ```
 
 ```bash
-docker compose --env-file .env.control-plane up -d --build
+docker compose up -d --build
 ```
 
-`data/control-plane` 保存 SQLite 与策略产物，`data/backtest-worker` 保存 backtest worker 的凭据和工作目录。可以通过 `INFINEX_DATA_ROOT=/srv/infinex` 将两者统一放到其他宿主机目录；迁移时停止容器并复制整个数据根目录。
+`data/control-plane` 保存 SQLite 与策略产物，`data/backtest-worker` 保存 backtest worker 的凭据和工作目录；迁移时停止容器并复制整个 `data/` 目录。
 
-Live worker 使用独立的 `docker-compose.live-worker.yml` 部署到交易机器，不依赖本机 Docker 网络中的 Control Plane。其 URL 必须是该机器能够访问的 HTTPS 或私网地址，`LIVE_WORKER_ID` 必须保持稳定且唯一：
+Live worker 使用独立的 `docker-compose.live-worker.yml` 部署到交易机器，不依赖本机 Docker 网络中的 Control Plane。复制环境模板后，只需填写该机器可访问的 HTTPS/私网地址、稳定唯一的 `WORKER_ID` 和 enrollment token：
 
 ```bash
 cp .env.live-worker.example .env.live-worker
-# 编辑 .env.live-worker 中的 URL、worker ID 和 enrollment token
-docker compose \
-  --env-file .env.live-worker \
-  -f docker-compose.live-worker.yml \
-  up -d
+# 编辑 .env.live-worker 中的 CONTROL_PLANE_URL、WORKER_ID 和 enrollment token
+docker compose -f docker-compose.live-worker.yml up -d
 ```
 
 Live worker 同样由 Compose 以 root 用户运行，其持久凭据位于 `data/live-worker`。迁移该 worker 时应连同此目录一起复制，避免迁移后重新 enrollment。在本地开发之外使用任一 Compose 文件前，Control Plane 与 worker 必须配置相同的初始 `WORKER_ENROLLMENT_TOKEN`。`.env.control-plane` 与 `.env.live-worker` 均已被 Git 忽略，不要提交真实 token。

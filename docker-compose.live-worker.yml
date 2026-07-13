@@ -3,17 +3,9 @@ services:
     image: ${INFINEX_IMAGE:-ghcr.io/imbingox/infinex:latest}
     user: "0:0"
     restart: unless-stopped
-    command:
-      [
-        "infinex",
-        "live-agent",
-        "--worker-id",
-        "${LIVE_WORKER_ID:?set LIVE_WORKER_ID to a stable unique identifier}",
-        "--control-plane-url",
-        "${CONTROL_PLANE_URL:?set CONTROL_PLANE_URL to the reachable Control Plane URL}",
-      ]
-    environment:
-      WORKER_DATA_DIR: /app/data/workers
-      WORKER_ENROLLMENT_TOKEN: ${WORKER_ENROLLMENT_TOKEN:-change-me-before-production}
+    command: ["infinex", "live-agent"]
+    env_file:
+      - path: ${INFINEX_ENV_FILE:-.env.live-worker}
+        required: true
     volumes:
-      - ${INFINEX_DATA_ROOT:-./data}/live-worker:/app/data/workers
+      - ./data/live-worker:/app/data/workers

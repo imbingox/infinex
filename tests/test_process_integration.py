@@ -98,22 +98,21 @@ def running_platform(
 
     server = start_server()
     work_dir = tmp_path / "live-agent"
+    agent_environment = {
+        **process_environment,
+        "CONTROL_PLANE_URL": base_url,
+        "WORKER_ID": "live-process",
+    }
     agent = subprocess.Popen(
         [
             sys.executable,
             "-m",
             "infinex.cli",
             "live-agent",
-            "--worker-id",
-            "live-process",
-            "--control-plane-url",
-            base_url,
-            "--token",
-            "process-enrollment-token",
             "--work-dir",
             str(work_dir),
         ],
-        env=process_environment,
+        env=agent_environment,
         stdout=agent_log,
         stderr=subprocess.STDOUT,
     )
